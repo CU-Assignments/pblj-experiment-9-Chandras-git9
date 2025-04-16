@@ -1,0 +1,93 @@
+import jakarta.persistence.*;
+import org.hibernate.Session;
+import org.hibernate.Transaction;
+import org.hibernate.cfg.Configuration;
+import org.hibernate.SessionFactory;
+
+public class HibernateCRUD {
+    // Entity class
+    @Entity
+    @Table(name = "students")
+    public static class Student {
+        @Id
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
+        private int id;
+
+        @Column
+        private String name;
+
+        @Column
+        private int age;
+
+        public Student() {}
+
+        public Student(String name, int age) {
+            this.name = name;
+            this.age = age;
+        }
+
+        public int getId() { return id; }
+        public String getName() { return name; }
+        public void setName(String name) { this.name = name; }
+        public int getAge() { return age; }
+        public void setAge(int age) { this.age = age; }
+
+        @Override
+        public String toString() {
+            return "Student{id=" + id + ", name='" + name + "', age=" + age + "}";
+        }
+    }
+
+    // Build SessionFactory programmatically
+    public static SessionFactory buildSessionFactory() {
+        return new Configuration()
+                .configure() // optional, loads hibernate.cfg.xml if exists
+                .addAnnotatedClass(Student.class)
+                .setProperty("hibernate.connection.driver_class", "com.mysql.cj.jdbc.Driver")
+                .setProperty("hibernate.connection.url", "jdbc:mysql://localhost:3306/hibernatedb")
+                .setProperty("hibernate.connection.username", "root")
+                .setProperty("hibernate.connection.password", "yourpassword") // 🔁 Change it
+                .setProperty("hibernate.dialect", "org.hibernate.dialect.MySQL8Dialect")
+                .setProperty("hibernate.hbm2ddl.auto", "update")
+                .setProperty("hibernate.show_sql", "true")
+                .buildSessionFactory();
+    }
+
+    public static void main(String[] args) {
+        SessionFactory factory = buildSessionFactory();
+
+        // Create
+        Student student = new Student("Chandra", 22);
+        Session session = factory.openSession();
+        Transaction tx = session.beginTransaction();
+        session.save(student);
+        tx.commit();
+        session.close();
+        System.out.println("Student Created: " + student);
+
+        // Read
+        session = factory.openSession();
+        Student fetched = session.get(Student.class, student.getId());
+        session.close();
+        System.out.println("Student Fetched: " + fetched);
+
+        // Update
+        fetched.setAge(23);
+        session = factory.openSession();
+        tx = session.beginTransaction();
+        session.update(fetched);
+        tx.commit();
+        session.close();
+        System.out.println("Student Updated: " + fetched);
+
+        // Delete
+        session = factory.openSession();
+        tx = session.beginTransaction();
+        session.delete(fetched);
+        tx.commit();
+        session.close();
+        System.out.println("Student Deleted: " + fetched);
+
+        factory.close();
+    }
+}
